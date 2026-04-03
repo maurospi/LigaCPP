@@ -3,6 +3,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <iomanip>
 #include <ctime>
 using namespace std;
 
@@ -54,7 +56,8 @@ bool loadConfig(const string& file, LeagueConfig& config) {
     ifstream configFile(file);
     if(!configFile.is_open()) {
         cerr << "ERROR: No se pudo abrir '" << file << "'.\n";
-        return false;
+        cerr << "El archivo de configuracion es obligatorio.\n";
+        return false; 
     }
 
     bool hasName = false, hasWin = false, hasLoss = false, hasDraw = false;
@@ -90,32 +93,166 @@ bool loadConfig(const string& file, LeagueConfig& config) {
 
     if(!hasName || !hasWin || !hasDraw || !hasLoss) {
         cerr << "ERROR: config.txt le faltan campos obligatorios.\n";
+        cerr << "       Datos Requeridos: leagueName, win_points, draw_points, defeat_points\n";
         return false;
     }
-    if(config.clubs.empty()) {
-        cerr << "ERROR: No hay equipos registrados.\n";
+    if(config.clubs.empty()){
+        cerr << "ERROR: config.txt no tiene ningun equipo registrado (valor 'club=').\n";
         return false;
     }
     return true;
 }
 
+bool loadMatches(const string& file, vector<Match>& matches) {
+    matches.clear();
+    ifstream matchFile(file);
+    if(!matchFile.is_open()) return true;
+
+    string line;
+    int lineNum = 0;
+    while(getline(matchFile, line)) {
+        lineNum++;
+        line = trim(line);
+        if(line.empty()) continue;
+
+        istringstream ss(line);
+        string date, home, away, sHomeGoals, sAwayGoals;
+
+        if(!getline(ss, date,       ';') || !getline(ss, home,       ';') || !getline(ss, away,       ';') || !getline(ss, sHomeGoals, ';') || !getline(ss, sAwayGoals, ';')) {
+        cout << "ADVERTENCIA: Linea " << lineNum << " de partidos.txt tiene formato invalido.\n";
+        continue;
+        }
+
+        Match m;
+        m.date = trim(date);
+        m.home = trim(home);
+        m.away = trim(away);
+        m.homeGoals = stoi(trim(sHomeGoals));
+        m.awayGoals = stoi(trim(sAwayGoals));
+        matches.push_back(m);
+    }
+    matchFile.close();
+    return true;
+}
+
+void showMatchHistory(const string& file) {
+    ifstream historyFile(file);
+    if(!historyFile.is_open()) {
+        cout << "\nNo hay historial de jornadas registrado aun.\n";
+        return;
+    }
+
+    string line;
+    bool hasContent = false;
+    cout << "\n";
+
+    while(getline(historyFile, line)) {
+        line = trim(line);
+        if(line.empty()) continue;
+        hasContent = true;
+
+        if(line.find("JORNADA=") == 0) {
+            cout << "JORNADA " << line.substr(8) << "\n";
+        } else if(line.find("FECHA=") == 0) {
+            cout << "Fecha: " << line.substr(6) << "\n";
+            cout << "----------------------------------------\n";
+        } else if(line == "FIN_JORNADA") {
+            cout << "\n\n";
+        } else {
+            istringstream ss(line);
+            string home, away, sHomeGoals, sAwayGoals;
+            if(getline(ss, home, ';') && getline(ss, away, ';') && getline(ss, sHomeGoals, ';') && getline(ss, sAwayGoals)) {
+                cout << "  " << trim(home) << "  " << trim(sHomeGoals) << " - " << trim(sAwayGoals) << "  " << trim(away) << "\n";
+            }
+        }
+    }
+    historyFile.close();
+
+    if(!hasContent) cout << "No hay registro historico de jornadas registradas.\n";
+}
+
+void updateStats(Club* club, int goalsFor, int goalsAgainst, const LeagueConfig& config) {
+    club->played++;
+    club->goalsFor     += goalsFor;
+    club->goalsAgainst += goalsAgainst;
+    club->goalDiff      = club->goalsFor - club->goalsAgainst;
+ 
+    if(goalsFor > goalsAgainst) {
+        club->won++;
+        club->points += config.winPts;
+    } else if(goalsFor == goalsAgainst) {
+        club->drawn++;
+        club->points += config.drawPts;
+    } else {
+        club->lost++;
+        club->points += config.lossPts;
+    }
+}
+ 
+vector<Club> buildTable(const vector<Match>& matches, const LeagueConfig& config) {
+    vector<Club> table;
+ 
+    for(int i = 0; i < (int)config.clubs.size(); i++) {
+        Club c;
+        c.name   = config.clubs[i];
+        c.status = "-----";
+        c.played = c.won = c.drawn = c.lost = 0;
+        c.goalsFor = c.goalsAgainst = c.goalDiff = c.points = 0;
+        table.push_back(c);
+    }
+ 
+    for(int i = 0; i < (int)matches.size(); i++) {
+        const Match& m = matches[i];
+        for(int j = 0; j < (int)table.size(); j++) {
+            if(table[j].name == m.home)
+                updateStats(&table[j], m.homeGoals, m.awayGoals, config);
+            if(table[j].name == m.away)
+                updateStats(&table[j], m.awayGoals, m.homeGoals, config);
+        }
+    }
+    return table;
+}
+ 
+bool compareclubs(const Club& a, const Club& b) {
+    if(a.points   != b.points)   return a.points   > b.points;
+    if(a.goalDiff != b.goalDiff) return a.goalDiff > b.goalDiff;
+    return a.goalsFor > b.goalsFor;
+}
+ 
+void sortTable(vector<Club>& table) {
+    sort(table.begin(), table.end(), compareclubs);
+}
+ 
+void printTable(const vector<Club>& table) {
+    cout << "\n";
+    cout << left << setw(4) << "#" << setw(22) << "Equipo" << setw(14) << "Estado"
+         << right << setw(5) << "PJ" << setw(5) << "PG" << setw(5) << "PE"
+         << setw(5) << "PP" << setw(5) << "GF" << setw(5) << "GC"
+         << setw(6) << "DG" << setw(6) << "PTS" << "\n";
+    cout << string(82, '-') << "\n";
+ 
+    for(int i = 0; i < (int)table.size(); i++) {
+        const Club& c = table[i];
+        string gdStr = (c.goalDiff >= 0) ? "+" + to_string(c.goalDiff) : to_string(c.goalDiff);
+        cout << left << setw(4) << (i + 1) << setw(22) << c.name << setw(14) << c.status
+             << right << setw(5) << c.played << setw(5) << c.won   << setw(5) << c.drawn
+             << setw(5) << c.lost << setw(5) << c.goalsFor << setw(5) << c.goalsAgainst
+             << setw(6) << gdStr  << setw(6) << c.points << "\n";
+    }
+    cout << "\n";
+}
+ 
 int main() {
     LeagueConfig config;
-
-    if(!loadConfig("data/config.txt", config)) {
-        cout << "No se pudo cargar la configuracion.\n";
-        return 1;
-    }
-
-    cout << "Liga: "     << config.leagueName << "\n";
-    cout << "Victoria: " << config.winPts  << " pts\n";
-    cout << "Empate: "   << config.drawPts << " pts\n";
-    cout << "Derrota: "  << config.lossPts << " pts\n";
-    cout << "Equipos: "  << config.clubs.size() << "\n";
-    for(int i = 0; i < (int)config.clubs.size(); i++) {
-        cout << "  - " << config.clubs[i] << "\n";
-    }
-    cout << "Hoy es: " << getTodayDate() << "\n";
-
+    if(!loadConfig("data/config.txt", config)) return 1;
+ 
+    vector<Match> matches;
+    loadMatches("data/partidos.txt", matches);
+ 
+    vector<Club> table = buildTable(matches, config);
+    sortTable(table);
+    printTable(table);
+ 
     return 0;
 }
+ 

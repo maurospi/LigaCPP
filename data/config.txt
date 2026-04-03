@@ -1,20 +1,20 @@
-# Liga
+# Configuracion de la liga
 league=Liga No Se :/
 
-# Puntos
+# Puntos por resultado
 win_points=3
 draw_points=1
 defeat_points=0
 
 # Equipos
-club=Millitos el más grande
-club=Millitos el más grande
-club=Millitos el más grande
-club=Millitos el más grande
-club=Millitos el más grande
-club=Millitos el más grande
-club=Millitos el más grande
-club=Millitos el más grande
-club=Millitos el más grande
-club=Millitos el más grande
-club=Millitos el más grande
+club=Atletico Nacional
+club=Millonarios FC
+club=America de Cali
+club=Junior FC
+club=Independiente Santa Fe
+club=Deportivo Cali
+club=Atletico Bucaramanga
+club=Once Caldas
+club=Deportes Tolima
+club=Envigado FC
+club=Patriotas Boyaca
