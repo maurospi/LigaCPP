@@ -1,0 +1,20 @@
+# Liga
+league=Liga No Se :/
+
+# Puntos
+win_points=3
+draw_points=1
+defeat_points=0
+
+# Equipos
+club=Millitos el más grande
+club=Millitos el más grande
+club=Millitos el más grande
+club=Millitos el más grande
+club=Millitos el más grande
+club=Millitos el más grande
+club=Millitos el más grande
+club=Millitos el más grande
+club=Millitos el más grande
+club=Millitos el más grande
+club=Millitos el más grande
