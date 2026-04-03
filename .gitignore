@@ -6,3 +6,5 @@ tabla.txt
 *.out
 *.exe
 *.exec
+.DS_Store
+Thumbs.db

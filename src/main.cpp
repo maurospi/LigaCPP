@@ -11,7 +11,7 @@ struct LeagueConfig {
     int winPts;
     int lossPts;
     int drawPts;
-    vector<string> teams;
+    vector<string> clubs;
 };
 
 struct Match {
@@ -22,7 +22,7 @@ struct Match {
     int awayGoals;
 };
 
-struct Match {
+struct Club {
     string name;
     string status;
     int played;
@@ -83,7 +83,7 @@ bool loadConfig(const string& file, LeagueConfig& config) {
             config.lossPts = stoi(value);
             hasLoss = true;
         } else if(key == "club") {
-            if(!value.empty()) config.teams.push_back(value);
+            if(!value.empty()) config.clubs.push_back(value);
         }
     }
     configFile.close();
@@ -92,7 +92,7 @@ bool loadConfig(const string& file, LeagueConfig& config) {
         cerr << "ERROR: config.txt le faltan campos obligatorios.\n";
         return false;
     }
-    if(config.teams.empty()) {
+    if(config.clubs.empty()) {
         cerr << "ERROR: No hay equipos registrados.\n";
         return false;
     }
@@ -111,9 +111,9 @@ int main() {
     cout << "Victoria: " << config.winPts  << " pts\n";
     cout << "Empate: "   << config.drawPts << " pts\n";
     cout << "Derrota: "  << config.lossPts << " pts\n";
-    cout << "Equipos: "  << config.teams.size() << "\n";
-    for(int i = 0; i < (int)config.teams.size(); i++) {
-        cout << "  - " << config.teams[i] << "\n";
+    cout << "Equipos: "  << config.clubs.size() << "\n";
+    for(int i = 0; i < (int)config.clubs.size(); i++) {
+        cout << "  - " << config.clubs[i] << "\n";
     }
     cout << "Hoy es: " << getTodayDate() << "\n";
 
