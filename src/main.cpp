@@ -188,6 +188,50 @@ void saveAllMatches(const string& file, const vector<Match>& matches) {
     matchFile.close();
 }
 
+void updateMatchDay(const string& file, const Match& m) {
+    vector<string> lines;
+    ifstream daysFileIn(file);
+    if(daysFileIn.is_open()) {
+        string line;
+        while(getline(daysFileIn, line)) lines.push_back(line);
+        daysFileIn.close();
+    }
+    string matchEntry = m.home + ";" + m.away + ";" + to_string(m.homeGoals) + ";" + to_string(m.awayGoals);
+    string dayKey = "FECHA=" + m.date;
+    bool dayFound = false;
+    for(int i = 0; i < (int)lines.size(); i++) {
+        if(trim(lines[i]) == dayKey) {
+            for(int j = i + 1; j < (int)lines.size(); j++) {
+                if(trim(lines[j]) == "FIN_JORNADA") { 
+                    lines.insert(lines.begin() + j, matchEntry);
+                    dayFound = true; 
+                    break; 
+                }
+            }
+            break;
+        }
+    }
+    if(!dayFound) {
+        int dayCount = 1;
+        for(int i = 0; i < (int)lines.size(); i++){
+            if(trim(lines[i]).find("JORNADA=") == 0) dayCount++;
+            lines.push_back("JORNADA=" + to_string(dayCount));
+            lines.push_back("FECHA="   + m.date);
+            lines.push_back(matchEntry);
+            lines.push_back("FIN_JORNADA");
+        }
+    }
+    ofstream daysFileOut(file);
+    if(!daysFileOut.is_open()) { 
+        cerr << "ERROR: No se puede abrir: " << file << "\n"; 
+        return; 
+    }
+    for(int i = 0; i < (int)lines.size(); i++){ 
+        daysFileOut << lines[i] << "\n";
+    }
+    daysFileOut.close();
+}
+
 void updateStats(Club* club, int goalsFor, int goalsAgainst, const LeagueConfig& config) {
     club->played++;
     club->goalsFor += goalsFor;
@@ -375,8 +419,8 @@ int main() {
                 cout << "Guardar? (s/n): ";
                 char confirm; cin >> confirm; cin.ignore(1000, '\n');
                 if(confirm == 's' || confirm == 'S') {
-//                    appendMatch(MATCHES_FILE, m);
-//                    updateMatchDay(DAYS_FILE, m);
+                    appendMatch(MATCHES_FILE, m);
+                    updateMatchDay(DAYS_FILE, m);
                     cout << "Partido registrado.\n";
                 }
                 break;
