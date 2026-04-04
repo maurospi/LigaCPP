@@ -54,7 +54,7 @@ string trim(const string& s) {
 
 bool loadConfig(const string& file, LeagueConfig& config) {
     ifstream configFile(file);
-    if(!configFile.is_open()) {
+    if(!configFile.is_open()) { 
         cerr << "ERROR: No se pudo abrir '" << file << "'.\n";
         cerr << "El archivo de configuracion es obligatorio.\n";
         return false; 
@@ -62,42 +62,36 @@ bool loadConfig(const string& file, LeagueConfig& config) {
 
     bool hasName = false, hasWin = false, hasLoss = false, hasDraw = false;
     string line;
-
     while(getline(configFile, line)) {
         line = trim(line);
         if(line.empty() || line[0] == '#') continue;
-
         size_t pos = line.find('=');
         if(pos == string::npos) continue;
-
-        string key   = trim(line.substr(0, pos));
+        string key = trim(line.substr(0, pos));
         string value = trim(line.substr(pos + 1));
-
-        if(key == "league") {
+        if(key == "league"){
             config.leagueName = value;
-            hasName = true;
-        } else if(key == "win_points") {
-            config.winPts = stoi(value);
-            hasWin = true;
-        } else if(key == "draw_points") {
+            hasName = true; 
+        }else if(key == "win_points"){
+            config.winPts  = stoi(value); 
+            hasWin  = true; 
+        }else if(key == "draw_points"){
             config.drawPts = stoi(value);
-            hasDraw = true;
-        } else if(key == "defeat_points") {
+            hasDraw = true; 
+        }else if(key == "defeat_points"){
             config.lossPts = stoi(value);
-            hasLoss = true;
-        } else if(key == "club") {
-            if(!value.empty()) config.clubs.push_back(value);
-        }
+            hasLoss = true; 
+        }else if(key == "club" && !value.empty()) 
+        config.clubs.push_back(value);
     }
     configFile.close();
-
     if(!hasName || !hasWin || !hasDraw || !hasLoss) {
         cerr << "ERROR: config.txt le faltan campos obligatorios.\n";
-        cerr << "       Datos Requeridos: leagueName, win_points, draw_points, defeat_points\n";
+        cerr << "       Datos Requeridos: league, win_points, draw_points, defeat_points\n";
         return false;
     }
-    if(config.clubs.empty()){
-        cerr << "ERROR: config.txt no tiene ningun equipo registrado (valor 'club=').\n";
+    if(config.clubs.empty()) { 
+        cerr << "ERROR: config.txt no tiene ningun equipo registrado (clave 'club=').\n";
         return false;
     }
     return true;
@@ -171,6 +165,29 @@ void showMatchHistory(const string& file) {
     if(!hasContent) cout << "No hay registro historico de jornadas registradas.\n";
 }
 
+void appendMatch(const string& file, const Match& m) {
+    ofstream matchFile(file, ios::app);
+    if(!matchFile.is_open()) { 
+        cerr << "ERROR: No se pudo abrir '" << file << "' para escritura.\n";
+        return; 
+    }
+    matchFile << m.date << ";" << m.home << ";" << m.away << ";"
+              << m.homeGoals << ";" << m.awayGoals << "\n";
+    matchFile.close();
+}
+
+void saveAllMatches(const string& file, const vector<Match>& matches) {
+    ofstream matchFile(file);
+    if(!matchFile.is_open()) { 
+        cerr << "ERROR: No se pudo abrir '" << file << "'.\n"; 
+        return; 
+    }
+    for(int i = 0; i < (int)matches.size(); i++)
+        matchFile << matches[i].date << ";" << matches[i].home << ";" << matches[i].away << ";"
+                  << matches[i].homeGoals << ";" << matches[i].awayGoals << "\n";
+    matchFile.close();
+}
+
 void updateStats(Club* club, int goalsFor, int goalsAgainst, const LeagueConfig& config) {
     club->played++;
     club->goalsFor += goalsFor;
@@ -234,6 +251,20 @@ void printTable(const vector<Club>& table) {
         cout << left << setw(4) << (i + 1) << setw(22) << c.name << setw(14) << c.status << right << setw(5) << c.played << setw(5) << c.won   << setw(5) << c.drawn << setw(5) << c.lost << setw(5) << c.goalsFor << setw(5) << c.goalsAgainst << setw(6) << gdStr  << setw(6) << c.points << "\n";
     }
     cout << "\n";
+}
+
+void saveTable(const vector<Club>& table, const string& file) {
+    ofstream tableFile(file);
+    if(!tableFile.is_open()) { cerr << "ERROR: No se pudo guardar la tabla en: " << file << "\n"; return; }
+    tableFile << left << setw(4) << "#" << setw(22) << "Equipo" << setw(14) << "Estado" << right << setw(5) << "PJ" << setw(5) << "PG" << setw(5) << "PE" << setw(5) << "PP" << setw(5) << "GF" << setw(5) << "GC" << setw(6) << "DG" << setw(6) << "PTS" << "\n";
+    tableFile << string(82, '-') << "\n";
+    for(int i = 0; i < (int)table.size(); i++) {
+        const Club& c = table[i];
+        string gdStr = (c.goalDiff >= 0) ? "+" + to_string(c.goalDiff) : to_string(c.goalDiff);
+        tableFile << left << setw(4) << (i + 1) << setw(22) << c.name << setw(14) << c.status << right << setw(5) << c.played << setw(5) << c.won   << setw(5) << c.drawn << setw(5) << c.lost << setw(5) << c.goalsFor << setw(5) << c.goalsAgainst << setw(6) << gdStr  << setw(6) << c.points << "\n";
+    }
+    tableFile.close();
+    cout << "La tabla se ha guardado en el archivo: " << file << ".\n";
 }
  
 int showMenu(const string& leagueName) {
