@@ -129,9 +129,9 @@ bool loadMatches(const string& file, vector<Match>& matches) {
         }
 
         Match m;
-        m.date      = trim(date);
-        m.home      = trim(home);
-        m.away      = trim(away);
+        m.date = trim(date);
+        m.home = trim(home);
+        m.away = trim(away);
         m.homeGoals = stoi(trim(sHomeGoals));
         m.awayGoals = stoi(trim(sAwayGoals));
         matches.push_back(m);
@@ -324,6 +324,20 @@ void sortTable(vector<Club>& table) {
     sort(table.begin(), table.end(), compareClubs);
 }
 
+void markStatus(vector<Club>& table) {
+    int topLimit = min(3, (int)table.size());
+    int bottomLimit = max(0, (int)table.size() - 3);
+    for(int i = 0; i < (int)table.size(); i++) {
+        if(i < topLimit) {
+            table[i].status = "Clasificado";
+        } else if(i >= bottomLimit) {
+            table[i].status = "Descenso";
+        } else {
+            table[i].status = "-----";
+        }
+    }
+}
+
 void printTable(const vector<Club>& table) {
     cout << "\n";
     cout << left  << setw(4)  << "#" << setw(22) << "Equipo" << setw(14) << "Estado" << right << setw(5)  << "PJ" << setw(5)  << "PG" << setw(5)  << "PE" << setw(5)  << "PP" << setw(5)  << "GF" << setw(5)  << "GC" << setw(6)  << "DG" << setw(6)  << "PTS" << "\n";
@@ -370,14 +384,17 @@ int showMenu(const string& leagueName) {
     cout << "2. Registrar partido\n";
     cout << "3. Ver historial de jornadas\n";
     cout << "4. Ver todos los partidos\n";
-    cout << "5. Salir\n\n";
+    cout << "5. Modificar equipos\n";
+    cout << "6. Eliminar partido\n";
+    cout << "7. Editar resultado\n";
+    cout << "8. Salir\n\n";
     cout << "Opcion: ";
     int option;
     cin >> option;
-    while(cin.fail() || option < 1 || option > 5) {
+    while(cin.fail() || option < 1 || option > 8) {
         cin.clear();
         cin.ignore(1000, '\n');
-        cout << "Opcion invalida. Ingrese del 1 al 5: ";
+        cout << "Opcion invalida. Ingrese del 1 al 8: ";
         cin >> option;
     }
     cin.ignore(1000, '\n');
@@ -512,18 +529,120 @@ void editClubs(const string& file, LeagueConfig& config) {
     saveConfig(file, config);
 }
 
+void removeMatch(const string& matchesFile, const string& daysFile) {
+    vector<Match> matches;
+    loadMatches(matchesFile, matches);
+    if(matches.empty()) {
+        cout << "No hay partidos registrados.\n";
+        return;
+    }
+    printAllMatches(matches);
+    cout << "Numero a eliminar: ";
+    int num;
+    cin >> num;
+    cin.ignore(1000, '\n');
+    if(num < 1 || num > (int)matches.size()) {
+        cout << "Numero invalido.\n";
+        return;
+    }
+
+    Match removed = matches[num - 1];
+    matches.erase(matches.begin() + (num - 1));
+    saveAllMatches(matchesFile, matches);
+
+    vector<string> lines;
+    ifstream daysFileIn(daysFile);
+    if(daysFileIn.is_open()) {
+        string line;
+        while(getline(daysFileIn, line)) {
+            lines.push_back(line);
+        }
+        daysFileIn.close();
+    }
+
+    string matchEntry = removed.home + ";" + removed.away + ";";
+    for(int i = 0; i < (int)lines.size(); i++) {
+        if(trim(lines[i]).find(matchEntry) == 0) {
+            lines.erase(lines.begin() + i);
+            break;
+        }
+    }
+
+    ofstream daysFileOut(daysFile);
+    for(int i = 0; i < (int)lines.size(); i++) {
+        daysFileOut << lines[i] << "\n";
+    }
+    daysFileOut.close();
+    cout << "Partido eliminado.\n";
+}
+
+void editScore(const string& matchesFile, const string& daysFile) {
+    vector<Match> matches;
+    loadMatches(matchesFile, matches);
+    if(matches.empty()) {
+        cout << "No hay partidos registrados.\n";
+        return;
+    }
+    printAllMatches(matches);
+    cout << "Numero a editar: ";
+    int num;
+    cin >> num;
+    cin.ignore(1000, '\n');
+    if(num < 1 || num > (int)matches.size()) {
+        cout << "Numero invalido.\n";
+        return;
+    }
+
+    Match& m = matches[num - 1];
+    cout << "Nuevos goles de " << m.home << ": ";
+    cin >> m.homeGoals;
+    cin.ignore(1000, '\n');
+    cout << "Nuevos goles de " << m.away << ": ";
+    cin >> m.awayGoals;
+    cin.ignore(1000, '\n');
+    saveAllMatches(matchesFile, matches);
+
+    vector<string> lines;
+    ifstream daysFileIn(daysFile);
+    if(daysFileIn.is_open()) {
+        string line;
+        while(getline(daysFileIn, line)) {
+            lines.push_back(line);
+        }
+        daysFileIn.close();
+    }
+
+    string oldEntry = m.home + ";" + m.away + ";";
+    string newEntry = m.home + ";" + m.away + ";" + to_string(m.homeGoals) + ";" + to_string(m.awayGoals);
+    for(int i = 0; i < (int)lines.size(); i++) {
+        if(trim(lines[i]).find(oldEntry) == 0) {
+            lines[i] = newEntry;
+            break;
+        }
+    }
+
+    ofstream daysFileOut(daysFile);
+    for(int i = 0; i < (int)lines.size(); i++) {
+        daysFileOut << lines[i] << "\n";
+    }
+    daysFileOut.close();
+    cout << "Resultado actualizado.\n";
+}
+
 int main() {
     const string CONFIG_FILE  = "../data/config.txt";
     const string MATCHES_FILE = "../data/partidos.txt";
     const string DAYS_FILE    = "../data/fechas.txt";
+    const string TABLE_FILE   = "../data/tabla.txt";
 
     LeagueConfig config;
     if(!loadConfig(CONFIG_FILE, config)) {
         return 1;
     }
 
-    cout << "\nLiga cargada: " << config.leagueName << "\n";
-    cout << "Equipos: " << config.clubs.size() << "\n";
+    cout << "\nLiga cargada correctamente: " << config.leagueName << "\n";
+    cout << "Puntos: Victoria: " << config.winPts << " | Empate: " << config.drawPts << " | Derrota: " << config.lossPts << "\n";
+    cout << "Equipos registrados: " << config.clubs.size() << "\n";
 
     int option;
     do {
@@ -534,13 +653,21 @@ int main() {
                 loadMatches(MATCHES_FILE, matches);
                 vector<Club> table = buildTable(matches, config);
                 sortTable(table);
+                markStatus(table);
                 printTable(table);
+                cout << "Guardar tabla? (s/n): ";
+                char answer;
+                cin >> answer;
+                cin.ignore(1000, '\n');
+                if(answer == 's' || answer == 'S') {
+                    saveTable(table, TABLE_FILE);
+                }
                 break;
             }
             case 2: {
                 Match m = inputMatch(config);
                 cout << "\n--- Confirmacion ---\n";
-                cout << m.home << "  " << m.homeGoals << " - " << m.awayGoals << "  " << m.away << "\n";
+                cout << m.home << "  " << m.homeGoals << " - " << m.awayGoals << "  " << m.away << "  [" << m.date << "]\n";
                 cout << "Guardar? (s/n): ";
                 char confirm;
                 cin >> confirm;
@@ -548,7 +675,9 @@ int main() {
                 if(confirm == 's' || confirm == 'S') {
                     appendMatch(MATCHES_FILE, m);
                     updateMatchDay(DAYS_FILE, m);
-                    cout << "Partido registrado.\n";
+                    cout << "Partido registrado correctamente.\n";
+                } else {
+                    cout << "Registro cancelado.\n";
                 }
                 break;
             }
@@ -563,10 +692,22 @@ int main() {
                 break;
             }
             case 5: {
-                cout << "\nHasta luego.\n";
+                editClubs(CONFIG_FILE, config);
+                break;
+            }
+            case 6: {
+                removeMatch(MATCHES_FILE, DAYS_FILE);
+                break;
+            }
+            case 7: {
+                editScore(MATCHES_FILE, DAYS_FILE);
+                break;
+            }
+            case 8: {
+                cout << "\nEl programa ha finalizado su ejecucion.\n";
                 break;
             }
         }
-    } while(option != 5);
+    } while(option != 8);
     return 0;
 }
