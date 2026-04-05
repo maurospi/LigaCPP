@@ -1,0 +1,13 @@
+#   Equipo                Estado           PJ   PG   PE   PP   GF   GC    DG   PTS
+----------------------------------------------------------------------------------
+1   Millitos el mas grandeClasificado       1    1    0    0    6    3    +3     3
+2   Arsenal               Clasificado       0    0    0    0    0    0    +0     0
+3   Fracalona             Clasificado       0    0    0    0    0    0    +0     0
+4   El JuJu               -----             0    0    0    0    0    0    +0     0
+5   Inter de Bogota       -----             0    0    0    0    0    0    +0     0
+6   Villareal             -----             0    0    0    0    0    0    +0     0
+7   Al Nassr              -----             0    0    0    0    0    0    +0     0
+8   Inter Miami           -----             0    0    0    0    0    0    +0     0
+9   Deportes Tolima       Descenso          0    0    0    0    0    0    +0     0
+10  Patriotas             Descenso          0    0    0    0    0    0    +0     0
+11  Real Vardrid          Descenso          1    0    0    1    3    6    -3     0

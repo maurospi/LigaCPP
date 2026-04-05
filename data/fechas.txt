@@ -1,0 +1,4 @@
+JORNADA=1
+FECHA=2026-04-05
+Real Vardrid;Millitos el mas grande;3;6
+FIN_JORNADA

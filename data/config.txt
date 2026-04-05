@@ -1,20 +1,16 @@
-# Configuracion de la liga
-league=Liga No Se :/
-
-# Puntos por resultado
+league=Liga Ospina
 win_points=3
 draw_points=1
 defeat_points=0
-
-# Equipos
-club=Atletico Nacional
-club=Millonarios FC
-club=America de Cali
-club=Junior FC
-club=Independiente Santa Fe
-club=Deportivo Cali
-club=Atletico Bucaramanga
-club=Once Caldas
+club=Real Vardrid
+club=Millitos el mas grande
+club=Fracalona
+club=El JuJu
+club=Inter de Bogota
+club=Arsenal
+club=Al Nassr
+club=Inter Miami
 club=Deportes Tolima
-club=Envigado FC
-club=Patriotas Boyaca
+club=Patriotas
+club=Villareal
+club=Prueba Agragar fc
